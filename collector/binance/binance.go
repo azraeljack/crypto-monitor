@@ -3,6 +3,7 @@ package binance
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/adshao/go-binance/v2"
 	"github.com/azraeljack/crypto-monitor/collector"
 	log "github.com/sirupsen/logrus"
@@ -37,10 +38,11 @@ func (c *Collector) CollectWindowPrice(symbol1, symbol2 string, window time.Dura
 			select {
 			case <-c.ctx.Done():
 				close(resultCh)
-				log.Info("collector exited")
+				log.Info("binance collector exited")
+				return
 			case <-ticker.C:
 				log.Infof("sending new window price request of [%s - %s] to binance...", symbol1, symbol2)
-				res, err := c.client.NewListSymbolTickerService().Symbol(pair).WindowSize(window.String()).Do(c.getContext())
+				res, err := c.client.NewListSymbolTickerService().Symbol(pair).WindowSize(fmt.Sprintf("%vm", uint64(window.Minutes()))).Do(c.getContext())
 				if err != nil {
 					log.Errorf("failed to fetch average price_change of [%s-%s], err: %v", symbol1, symbol2, err)
 					continue
@@ -164,9 +166,16 @@ func NewBinanceCollector(ctx context.Context, rawConf json.RawMessage) collector
 		interval = 5 * time.Second
 	}
 
+	var client *binance.Client
+	if len(conf.Proxy) > 0 {
+		client = binance.NewProxiedClient(conf.ApiKey, conf.ApiSecret, conf.Proxy)
+	} else {
+		client = binance.NewClient(conf.ApiKey, conf.ApiSecret)
+	}
+
 	return &Collector{
 		config:   conf,
-		client:   binance.NewClient(conf.ApiKey, conf.ApiSecret),
+		client:   client,
 		timeout:  timeout,
 		interval: interval,
 		ctx:      ctx,

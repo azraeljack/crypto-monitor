@@ -11,11 +11,11 @@ import (
 	cache "github.com/go-pkgz/expirable-cache/v2"
 	log "github.com/sirupsen/logrus"
 	"html/template"
+	"math"
 	"time"
 )
 
-var notificationTemplate = `
-发现价格波动：
+var notificationTemplate = `发现价格波动：
 - 时间：{{.Time}}
 - 交易对：{{.Symbol1}} - {{.Symbol2}}
 - 波动幅度：{{.Absolute}} ({{.Percentage}}%)
@@ -85,7 +85,7 @@ func (s *Strategy) Run() {
 						log.Infof("price already notified in this window")
 						continue
 					}
-					if price.AbsolutePriceChange >= s.absolute || price.RelativePriceChange >= s.percentage {
+					if math.Abs(price.AbsolutePriceChange) >= s.absolute || math.Abs(price.RelativePriceChange) >= s.percentage {
 						s.priceCache.Set(priceKey, struct{}{}, s.windowSize)
 
 						select {
@@ -95,7 +95,7 @@ func (s *Strategy) Run() {
 							log.Warnf("price change notify channel full, discard data: %s", price.String())
 						}
 					} else {
-						log.Debugf("received unmatched price change, absolute: %v, relative: %v", s.absolute, s.percentage)
+						log.Debugf("received unmatched price change, absolute: %v, relative: %v", price.AbsolutePriceChange, price.RelativePriceChange)
 					}
 				case <-s.ctx.Done():
 					log.Info("price change strategy collector listener exit")
@@ -113,8 +113,8 @@ func (s *Strategy) Run() {
 					go func(price *collector.WindowPrice, not notifier.Notifier) {
 						log.Info("sending price change notification...")
 						log.Debugf("price change: %v", price.String())
-						tmpl, err := template.ParseGlob(notificationTemplate)
-						if err != nil {
+						tmpl := template.New("PriceChangeNotification")
+						if _, err := tmpl.Parse(notificationTemplate); err != nil {
 							log.Warnf("unable to parse template: %v", err)
 							return
 						}

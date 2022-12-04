@@ -1,16 +1,30 @@
 package wechat
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/azraeljack/crypto-monitor/notifier"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"time"
 )
+
+type TextContent struct {
+	Content string `json:"content"`
+}
+
+type NotificationMsg struct {
+	MsgType string      `json:"msgtype"`
+	Text    TextContent `json:"text"`
+}
+
+func (n *NotificationMsg) ToJSON() []byte {
+	raw, _ := json.Marshal(n)
+	return raw
+}
 
 type Notifier struct {
 	webhookURL string
@@ -59,7 +73,13 @@ func (w *Notifier) Notify(msg string) {
 	}
 	w.lastNotifiedTime.Store(currentTime)
 
-	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, w.webhookURL, strings.NewReader(msg))
+	payload := &NotificationMsg{
+		MsgType: "text",
+		Text: TextContent{
+			Content: msg,
+		},
+	}
+	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, w.webhookURL, bytes.NewReader(payload.ToJSON()))
 	if err != nil {
 		log.Errorf("notify fail: %v", err)
 		return
