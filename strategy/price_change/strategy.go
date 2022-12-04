@@ -18,27 +18,30 @@ import (
 var notificationTemplate = `发现价格波动：
 - 时间：{{.Time}}
 - 交易对：{{.Symbol1}} - {{.Symbol2}}
+- 当前价格：{{.CurrentPrice}}
 - 波动幅度：{{.Absolute}} ({{.Percentage}}%)
 - 成交笔数：{{.OrderNumber}}
 `
 
 type Notification struct {
-	Time        string
-	Symbol1     string
-	Symbol2     string
-	Absolute    string
-	Percentage  string
-	OrderNumber string
+	Time         string
+	Symbol1      string
+	Symbol2      string
+	Absolute     string
+	Percentage   string
+	OrderNumber  string
+	CurrentPrice string
 }
 
 func NewNotification(symbol1, symbol2 string, price *collector.WindowPrice) *Notification {
 	return &Notification{
-		Time:        time.Now().Format("2006-01-02 15:04:05"),
-		Symbol1:     symbol1,
-		Symbol2:     symbol2,
-		Absolute:    fmt.Sprintf("%v", price.AbsolutePriceChange),
-		Percentage:  fmt.Sprintf("%v", price.RelativePriceChange),
-		OrderNumber: fmt.Sprintf("%v", price.OrderCount),
+		Time:         time.Now().Format("2006-01-02 15:04:05"),
+		Symbol1:      symbol1,
+		Symbol2:      symbol2,
+		CurrentPrice: fmt.Sprintf("%v", price.ClosePrice),
+		Absolute:     fmt.Sprintf("%v", price.AbsolutePriceChange),
+		Percentage:   fmt.Sprintf("%v", price.RelativePriceChange),
+		OrderNumber:  fmt.Sprintf("%v", price.OrderCount),
 	}
 }
 
