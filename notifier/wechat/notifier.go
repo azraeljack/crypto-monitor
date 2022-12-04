@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -15,7 +16,10 @@ type Notifier struct {
 	webhookURL string
 	httpClient *http.Client
 
-	ctx context.Context
+	throttle time.Duration
+
+	lastNotifiedTime atomic.Int64
+	ctx              context.Context
 }
 
 func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.Notifier {
@@ -29,8 +33,14 @@ func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.No
 		timeout = 5 * time.Second
 	}
 
+	throttle, err := time.ParseDuration(conf.Throttle)
+	if err != nil {
+		throttle = 5 * time.Second
+	}
+
 	return &Notifier{
 		webhookURL: conf.WebhookURL,
+		throttle:   throttle,
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
@@ -41,6 +51,11 @@ func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.No
 func (w *Notifier) Notify(msg string) {
 	log.Info("sending wechat notification...")
 	log.Debugf("wechat payload: %v", msg)
+
+	if w.lastNotifiedTime.Load()+int64(w.throttle) > time.Now().UnixNano() {
+		log.Infof("wechat notifiation throttled, ignore message")
+		return
+	}
 
 	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, w.webhookURL, strings.NewReader(msg))
 	if err != nil {
