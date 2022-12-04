@@ -52,10 +52,12 @@ func (w *Notifier) Notify(msg string) {
 	log.Info("sending wechat notification...")
 	log.Debugf("wechat payload: %v", msg)
 
-	if w.lastNotifiedTime.Load()+int64(w.throttle) > time.Now().UnixNano() {
+	currentTime := time.Now().UnixNano()
+	if w.lastNotifiedTime.Load()+int64(w.throttle) > currentTime {
 		log.Infof("wechat notifiation throttled, ignore message")
 		return
 	}
+	w.lastNotifiedTime.Store(currentTime)
 
 	request, err := http.NewRequestWithContext(w.ctx, http.MethodPost, w.webhookURL, strings.NewReader(msg))
 	if err != nil {
