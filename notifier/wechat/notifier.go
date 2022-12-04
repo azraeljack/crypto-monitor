@@ -62,16 +62,19 @@ func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.No
 	}
 }
 
-func (w *Notifier) Notify(msg string) {
+func (w *Notifier) Notify(msg string, throttle bool) {
 	log.Info("sending wechat notification...")
 	log.Debugf("wechat payload: %v", msg)
 
-	currentTime := time.Now().UnixNano()
-	if w.lastNotifiedTime.Load()+int64(w.throttle) > currentTime {
-		log.Infof("wechat notifiation throttled, ignore message")
-		return
+	if throttle {
+		currentTime := time.Now().UnixNano()
+		if w.lastNotifiedTime.Load()+int64(w.throttle) > currentTime {
+			log.Infof("wechat notifiation throttled, ignore message")
+			return
+		}
+
+		w.lastNotifiedTime.Store(currentTime)
 	}
-	w.lastNotifiedTime.Store(currentTime)
 
 	payload := &NotificationMsg{
 		MsgType: "text",

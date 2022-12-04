@@ -125,7 +125,7 @@ func (s *Strategy) Run() {
 							return
 						}
 
-						not.Notify(stringWriter.String())
+						not.Notify(stringWriter.String(), true)
 						log.Infof("price change notifcation sent")
 					}(price, n)
 				}

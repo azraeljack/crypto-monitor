@@ -35,6 +35,9 @@ func main() {
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGKILL, syscall.SIGINT)
 
 	<-c
+	<-mon.Stop()
+
 	cancel()
+
 	log.Info("monitor exited")
 }

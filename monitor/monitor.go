@@ -72,3 +72,16 @@ func (m *Monitor) Start() {
 		strata.Run()
 	}
 }
+
+func (m *Monitor) Stop() <-chan struct{} {
+	stopCh := make(chan struct{}, 1)
+
+	go func() {
+		for _, not := range m.notifiers {
+			not.Notify("监控程序已停止", false)
+		}
+		close(stopCh)
+	}()
+
+	return stopCh
+}
