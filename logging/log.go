@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"path/filepath"
+	"path"
 	"syscall"
 	"time"
 
@@ -13,8 +13,10 @@ import (
 )
 
 func SetupLogRotate() {
+	currentDir, _ := os.Getwd()
+
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("/root/monitor.log"),
+		Filename:   path.Join(currentDir, "monitor.log"),
 		MaxSize:    500, // MB
 		MaxBackups: 3,
 		MaxAge:     30, // days
@@ -29,7 +31,7 @@ func SetupLogRotate() {
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	log.SetOutput(multiWriter)
 
 	c := make(chan os.Signal, 1)
