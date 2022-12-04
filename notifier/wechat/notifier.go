@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"sync/atomic"
+	"sync"
 	"time"
 )
 
@@ -32,8 +32,8 @@ type Notifier struct {
 
 	throttle time.Duration
 
-	lastNotifiedTime atomic.Int64
-	ctx              context.Context
+	lastNotifiedTimes sync.Map
+	ctx               context.Context
 }
 
 func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.Notifier {
@@ -62,18 +62,19 @@ func NewWechatNotifier(ctx context.Context, rawConf json.RawMessage) notifier.No
 	}
 }
 
-func (w *Notifier) Notify(msg string, throttle bool) {
+func (w *Notifier) Notify(msg, from string, throttle bool) {
 	log.Info("sending wechat notification...")
 	log.Debugf("wechat payload: %v", msg)
 
 	if throttle {
 		currentTime := time.Now().UnixNano()
-		if w.lastNotifiedTime.Load()+int64(w.throttle) > currentTime {
+		lastNotifiedTime, ok := w.lastNotifiedTimes.Load(from)
+		if ok && lastNotifiedTime.(int64)+int64(w.throttle) > currentTime {
 			log.Infof("wechat notifiation throttled, ignore message")
 			return
 		}
 
-		w.lastNotifiedTime.Store(currentTime)
+		w.lastNotifiedTimes.Store(from, currentTime)
 	}
 
 	payload := &NotificationMsg{

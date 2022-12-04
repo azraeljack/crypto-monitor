@@ -8,7 +8,7 @@ import (
 )
 
 type Notifier interface {
-	Notify(msg string, throttle bool)
+	Notify(msg, from string, throttle bool)
 }
 
 type Builder func(ctx context.Context, rawConf json.RawMessage) Notifier

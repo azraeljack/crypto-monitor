@@ -54,6 +54,8 @@ func (c *Collector) CollectWindowPrice(symbol1, symbol2 string, window time.Dura
 				log.Debugf("received response from binance %s", toJSONString(res))
 
 				windowPrice := &collector.WindowPrice{
+					Symbol1:             symbol1,
+					Symbol2:             symbol2,
 					OpenPrice:           stringToFloat(price.OpenPrice),
 					ClosePrice:          stringToFloat(price.LastPrice),
 					HighPrice:           stringToFloat(price.HighPrice),

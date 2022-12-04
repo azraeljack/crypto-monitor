@@ -80,7 +80,7 @@ func (s *Strategy) Run() {
 						log.Info("price change strategy collector listener exit")
 						return
 					}
-					priceKey := fmt.Sprintf("%v-%v", price.HighPrice, price.LowPrice)
+					priceKey := fmt.Sprintf("%v", price.AbsolutePriceChange)
 					if _, exist := s.priceCache.Peek(priceKey); exist {
 						log.Infof("price already notified in this window")
 						continue
@@ -125,7 +125,7 @@ func (s *Strategy) Run() {
 							return
 						}
 
-						not.Notify(stringWriter.String(), true)
+						not.Notify(stringWriter.String(), "PriceChange^"+price.SymbolPair(), true)
 						log.Infof("price change notifcation sent")
 					}(price, n)
 				}

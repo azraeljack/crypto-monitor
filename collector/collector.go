@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -18,6 +19,8 @@ type Collector interface {
 }
 
 type WindowPrice struct {
+	Symbol1             string  `json:"symbol1"`
+	Symbol2             string  `json:"symbol2"`
 	OpenPrice           float64 `json:"open_price"`
 	ClosePrice          float64 `json:"close_price"`
 	HighPrice           float64 `json:"high_price"`
@@ -34,6 +37,10 @@ type WindowPrice struct {
 func (w WindowPrice) String() string {
 	s, _ := json.Marshal(w)
 	return string(s)
+}
+
+func (w WindowPrice) SymbolPair() string {
+	return fmt.Sprintf("%s-%s", w.Symbol1, w.Symbol2)
 }
 
 var registry Registry

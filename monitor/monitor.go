@@ -71,6 +71,11 @@ func (m *Monitor) Start() {
 	for _, strata := range m.strategies {
 		strata.Run()
 	}
+	go func() {
+		for _, not := range m.notifiers {
+			not.Notify("监控程序已启动", "main", false)
+		}
+	}()
 }
 
 func (m *Monitor) Stop() <-chan struct{} {
@@ -78,7 +83,7 @@ func (m *Monitor) Stop() <-chan struct{} {
 
 	go func() {
 		for _, not := range m.notifiers {
-			not.Notify("监控程序已停止", false)
+			not.Notify("监控程序已停止", "main", false)
 		}
 		close(stopCh)
 	}()
